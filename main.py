@@ -9,10 +9,13 @@ CORS(app)
 def index():
     return "plusOne :D!"
 
-@app.route('/predict', methods=['POST'])
+@app.route('/predict', methods=['GET'])
 def predict():
-    data = request.get_json() 
-    clusters, labels = clustering_model(data["inputs"])
+    args = request.args
+    print(args)
+    print(args['inputs'])
+    print('end')
+    clusters, labels = clustering_model(args["inputs"])
     output = {
         "clusters": clusters,
         "labels": labels
