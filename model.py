@@ -9,8 +9,10 @@ from flask import Flask, redirect, render_template, request, url_for
 model_encoder = SentenceTransformer('all-MiniLM-L6-v2')
 openai.api_key = os.getenv("OPENAI_API_KEY")
 
-def clustering_model(sticky_notes, type="kmeans"): 
+def clustering_model(sticky_notes): 
+    print(type(sticky_notes))
     embeddings = model_encoder.encode(sticky_notes)
+
 
     kmeans_kwargs = {
         "init": "random",
@@ -27,6 +29,7 @@ def clustering_model(sticky_notes, type="kmeans"):
     for k in range(2, 10):
         print(k)
         kmeans = KMeans(n_clusters=k, **kmeans_kwargs)
+        print(embeddings)
         kmeans.fit(embeddings)
         print('score')
         score = silhouette_score(embeddings, kmeans.labels_)
@@ -56,11 +59,11 @@ def summarize_cluster(prompt_list):
     response = openai.Completion.create(
         model="text-davinci-002",
         prompt=generate_prompt(prompt_list),
-        temperature=0,
-        max_tokens=50,
+        temperature=0.2,
+        max_tokens=35,
         top_p=1,
-        frequency_penalty=0,
-        presence_penalty=0
+        frequency_penalty=0.2,
+        presence_penalty=0.2
         )
 
     
