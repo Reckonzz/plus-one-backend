@@ -10,9 +10,7 @@ model_encoder = SentenceTransformer('all-MiniLM-L6-v2')
 openai.api_key = os.getenv("OPENAI_API_KEY")
 
 def clustering_model(sticky_notes): 
-    print(type(sticky_notes))
     embeddings = model_encoder.encode(sticky_notes)
-
 
     kmeans_kwargs = {
         "init": "random",
