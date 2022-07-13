@@ -2,10 +2,15 @@ import numpy as np
 from sentence_transformers import SentenceTransformer
 from sklearn.cluster import KMeans
 from sklearn.metrics import silhouette_score
-model_encoder = SentenceTransformer('all-MiniLM-L6-v2')
+import openai 
+import os
+from flask import Flask, redirect, render_template, request, url_for
 
-def clustering_model(sticky_notes, type="kmeans"): 
-    embeddings = model_encoder.encode(sticky_notes, convert_to_numpy=True)
+model_encoder = SentenceTransformer('all-MiniLM-L6-v2')
+openai.api_key = os.getenv("OPENAI_API_KEY")
+
+def clustering_model(sticky_notes): 
+    embeddings = model_encoder.encode(sticky_notes)
 
     kmeans_kwargs = {
         "init": "random",
@@ -19,17 +24,19 @@ def clustering_model(sticky_notes, type="kmeans"):
     best_k = 1 
     best_score = 0 
     # Notice you start at 2 clusters for silhouette coefficient
-    for k in range(2, len(sticky_notes)):
+    for k in range(2, 10):
         print(k)
         kmeans = KMeans(n_clusters=k, **kmeans_kwargs)
+        print(embeddings)
         kmeans.fit(embeddings)
+        print('score')
         score = silhouette_score(embeddings, kmeans.labels_)
         if score > best_score:
             best_k = k
             best_score = score
 
     kmeans = KMeans(n_clusters=best_k,  **kmeans_kwargs)
-
+    print('fit')
     kmeans.fit(embeddings)
 
     group ={}
@@ -44,5 +51,23 @@ def clustering_model(sticky_notes, type="kmeans"):
     # labels = [f"label_{i+1}" for i in range(n_clusters)]
     # print(clusters)
     # print(labels ) 
-    return list(group.values()), [i for i in range(len(group.values()))]
+    return list(group.values()), [summarize_cluster(cluster) for cluster in group.values()]
 
+def summarize_cluster(prompt_list):
+    response = openai.Completion.create(
+        model="text-davinci-002",
+        prompt=generate_prompt(prompt_list),
+        temperature=0.2,
+        max_tokens=35,
+        top_p=1,
+        frequency_penalty=0.2,
+        presence_penalty=0.2
+        )
+
+    
+    return response.choices[0].text
+
+
+def generate_prompt(prompt_list):
+    prompt= ", ".join(prompt_list)
+    return prompt + "\n\nTl;dr: "
